@@ -2,6 +2,8 @@
   "id": "proximity-voice-chat",
   "title": "Proximity Voice Chat",
   "version": "1.0.0",
+  "manifest": "https://github.com/MrCrackerplays/proximity-voice-chat/releases/latest/download/module.json",
+  "download": "https://github.com/MrCrackerplays/proximity-voice-chat/releases/download/1.0.0/proximity-voice-chat.zip",
   "compatibility": {
     "verified": "13.351",
     "minimum": "13"
