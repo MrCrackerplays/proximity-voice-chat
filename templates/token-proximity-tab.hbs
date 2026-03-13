@@ -1,0 +1,10 @@
+<div class="tab scrollable{{#if tab.active}} active{{/if}}" data-group="{{tab.group}}" data-tab="{{tab.id}}">
+  <label for="{{rootId}}-proximity-user-list">{{localize 'proximity-voice-chat.Token.UserList.Label'}}</label>
+  <input id="{{rootId}}-proximity-user-list" type="text" value="{{source.flags.proximity-voice-chat.userlist}}"
+    placeholder="{{localize 'proximity-voice-chat.Token.UserList.Hint'}}" name="flags.proximity-voice-chat.userlist"
+    {{#unless isGM}}disabled{{/unless}} />
+  <label for="{{rootId}}-proximity-radius">{{localize 'proximity-voice-chat.Token.ProximityRadius.Label'}}</label>
+  <input id="{{rootId}}-proximity-radius" type="number" value="{{source.flags.proximity-voice-chat.radius}}"
+    placeholder="{{localize 'proximity-voice-chat.Token.ProximityRadius.Hint'}}"
+    name="flags.proximity-voice-chat.radius" {{#unless isGM}}disabled{{/unless}} />
+</div>

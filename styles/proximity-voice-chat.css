@@ -1,0 +1,12 @@
+@layer proximity-voice-chat {
+
+  /* Fix for if other modules also add tabs to the token sheet thus causing overflow issues */
+  .sheet-tabs:not(.vertical) {
+    flex-wrap: wrap;
+    row-gap: 0;
+  }
+
+  button.av-control.active {
+    --button-background-color: var(--button-hover-background-color);
+  }
+}

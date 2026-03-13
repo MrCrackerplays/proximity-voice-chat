@@ -1,0 +1,36 @@
+{
+  "id": "proximity-voice-chat",
+  "title": "Proximity Voice Chat",
+  "version": "1.0.0",
+  "compatibility": {
+    "verified": "13.351",
+    "minimum": "13"
+  },
+  "authors": [
+    {
+      "name": "MrCrackerplays",
+      "discord": "mrcrackerplays",
+      "flags": {}
+    }
+  ],
+  "flags": {
+    "canUpload": true
+  },
+  "esmodules": [
+    "scripts/proximity-voice-chat.js"
+  ],
+  "languages": [
+    {
+      "lang": "en",
+      "name": "English",
+      "path": "lang/en.json",
+      "flags": {}
+    }
+  ],
+  "styles": [
+    {
+      "src": "styles/proximity-voice-chat.css"
+    }
+  ],
+  "description": "<p>A simplistic proximity chat using Foundry's built-in voice chat. Allowing you to assign which users can speak through specific tokens.</p>"
+}
