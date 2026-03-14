@@ -207,7 +207,7 @@ let _token_proximity_data = new Map();
  * @param {Partial<BaseEffectSourceData>} data data passed to PointSoundSource.initialize to recalculate the soundsource
  */
 function _update_proximity_data(token, userlist = "", data = {}) {
-  const default_radius = canvas.scene.getFlag(MODULE_ID, "radius") ?? game.settings.get(MODULE_ID, "defaultProximityRadius");
+  const default_radius = token.getFlag(MODULE_ID, "radius") ?? canvas.scene.getFlag(MODULE_ID, "radius") ?? game.settings.get(MODULE_ID, "defaultProximityRadius");
   if (data.radius === null) data.radius = default_radius;
   const comma_splitter = /\s*,\s*/;// splits on commas with any amount of whitespace on both sides
   let proximity_data = _token_proximity_data.get(token.uuid);
