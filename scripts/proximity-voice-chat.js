@@ -264,6 +264,8 @@ function _update_volumes() {
       let volume = 0;
       if (other_active_user.getFlag(MODULE_ID, "global_speaker")) {
         volume = 1;
+      } else if (game.webrtc.settings.getUser(other_active_user.id)?.muted) {
+        volume = 0;
       } else {
         proximity_tokens.forEach((proximity_token) => {
           if (volume >= 1) return;
