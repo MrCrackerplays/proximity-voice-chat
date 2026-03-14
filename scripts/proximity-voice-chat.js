@@ -326,7 +326,7 @@ Hooks.on("updateToken", (document, changed, _options, _userId) => {
 Hooks.on("updateTokenProximitySettings", async (token, userlist, radius) => {
   let data = {};
   if (radius !== undefined) data.radius = radius;
-  if (!userlist) {
+  if (userlist === "" || userlist === null) {
     _delete_proximity_data(token);
   } else {
     _update_proximity_data(token, userlist, data);
