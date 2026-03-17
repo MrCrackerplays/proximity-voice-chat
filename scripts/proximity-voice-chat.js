@@ -262,10 +262,10 @@ function _update_volumes() {
     }
     game.users.filter((user) => user.active && game.user.uuid !== user.uuid).forEach((other_active_user) => {
       let volume = 0;
-      if (other_active_user.getFlag(MODULE_ID, "global_speaker")) {
-        volume = 1;
-      } else if (game.webrtc.settings.getUser(other_active_user.id)?.muted) {
+      if (game.webrtc.settings.getUser(other_active_user.id)?.muted) {
         volume = 0;
+      } else if (other_active_user.getFlag(MODULE_ID, "global_speaker")) {
+        volume = 1;
       } else {
         proximity_tokens.forEach((proximity_token) => {
           if (volume >= 1) return;
@@ -281,7 +281,6 @@ function _update_volumes() {
             let token_volume = proximity_token.soundsource.getVolumeMultiplier(listen_location, { easing: true });
             volume = Math.max(volume, token_volume);
           });
-
         });
       }
       user_volumes.set(other_active_user.id, volume);
@@ -293,7 +292,7 @@ function _update_volumes() {
   }
 
   user_volumes.forEach((volume, user_id) => {
-    // apply the volume multiplier in user space (0.8 = 80% as loud) rather than the strange decibel? logarithmic? or something idk space that video.volume uses
+    // apply the volume multiplier in user/input space (0.8 = 80% as loud) rather than the strange decibel? logarithmic? or something idk space that video.volume uses
     volume = foundry.audio.AudioHelper.inputToVolume(foundry.audio.AudioHelper.volumeToInput(game.webrtc.settings.get("client", "users." + user_id + ".volume") ?? 1) * volume);
     let audio_source = ui.webrtc.getUserVideoElement(user_id);
     if (game.modules.get("avclient-livekit")?.active) {
@@ -301,7 +300,14 @@ function _update_volumes() {
       // but that module doesn't seem to have an api of any kind so if it has issues: eh I tried
       audio_source = audio_source?.parentElement?.querySelector(".user-microphone-audio") ?? audio_source;
     }
-    if (audio_source) audio_source.volume = volume;
+    if (!audio_source) return
+    audio_source.volume = volume;
+    if (audio_source.paused && volume > 0) {
+      // I cannot figure out why audio_source gets paused when _update_volumes runs with volume=0 but doesn't unpause upon the user unmuting/volume being > 0
+      // it doesn't seem to happen when manually setting volume to 0 in devtools while this module is disabled or when commenting out the 'audio_source.volume = volume'
+      // looking at the foundry source I also don't see any place where .pause() would get called on the webrtc video element
+      audio_source.play()?.catch(() => { });
+    }
   });
 }
 
@@ -445,7 +451,9 @@ Hooks.on("moveToken", async (token, updateData, _options, _userId) => {
       };
       foundry.canvas.animation.CanvasAnimation.animate(attributes, data).then(() => {
         _update_proximity_data(token, undefined, parent);
-        _update_volumes();
+        setTimeout(() => {
+          _update_volumes();
+        }, 100);
       });
     } else {
       _update_proximity_data(token, undefined, {
