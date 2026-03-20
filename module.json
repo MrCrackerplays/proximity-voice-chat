@@ -34,5 +34,6 @@
       "src": "styles/proximity-voice-chat.css"
     }
   ],
-  "description": "<p>A simplistic proximity chat using Foundry's built-in voice chat. Allowing you to assign which users can speak through specific tokens.</p>"
+  "description": "<p>A simplistic proximity chat using Foundry's built-in voice chat. Allowing you to assign which users can speak through specific tokens.</p>",
+  "url": "https://github.com/MrCrackerplays/proximity-voice-chat"
 }
