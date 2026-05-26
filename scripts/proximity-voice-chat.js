@@ -1,6 +1,15 @@
 export const MODULE_ID = "proximity-voice-chat";
 
 /**
+ * The different types with which a radius can be measured
+ * @enum {number}
+ */
+export const RADIUS_TYPE = {
+  PIXELS: 0,
+  TILES: 1
+}
+
+/**
  * Gets a token's userlist
  * @param {foundry.documents.TokenDocument} token the token whose userlist will be retrieved
  * @returns {string | undefined} the token's userlist, which is string representing a comma separated list of user UUIDs, or undefined if the token doesn't have a userlist
@@ -69,19 +78,39 @@ export function remove_user_from_userlist(token, user_uuid) {
 /**
  * Gets a token's calculated proximity radius, which is either the token's radius, the scene's radius, or the game setting default radius, in that order of precedence
  * @param {foundry.documents.TokenDocument} token the token for who its proximity radius will be calculated
- * @returns {number} the token's proximity radius in pixels
+ * @returns {number} the token's proximity radius in the token's radius type
  */
 export function get_calculated_token_radius(token) {
   return token.getFlag(MODULE_ID, "radius") ?? token.parent.getFlag(MODULE_ID, "radius") ?? game.settings.get(MODULE_ID, "defaultProximityRadius");
 }
 
 /**
+ * Gets the type of a token's calculated proximity radius, which is a value of RADIUS_TYPE
+ * @param {foundry.documents.TokenDocument} token the token for who its proximity radius type will be gotten
+ * @returns {RADIUS_TYPE} the token's proximity radius type
+ */
+export function get_calculated_token_radius_type(token) {
+  if (token.getFlag(MODULE_ID, "radius") != null) return token.getFlag(MODULE_ID, "radius_type") ?? RADIUS_TYPE.PIXELS;
+  if (token.parent.getFlag(MODULE_ID, "radius") != null) return token.parent.getFlag(MODULE_ID, "radius_type") ?? RADIUS_TYPE.PIXELS;
+  return game.settings.get(MODULE_ID, "defaultProximityRadiusType") ?? RADIUS_TYPE.PIXELS;
+}
+
+/**
  * Gets a token's proximity radius if it has one
  * @param {foundry.documents.TokenDocument} token the token whose proximity radius will be retrieved
- * @returns {number | undefined} the token's proximity radius in pixels, or undefined if the token doesn't have a specified proximity radius
+ * @returns {number | undefined} the token's proximity radius in the token's radius type, or undefined if the token doesn't have a specified proximity radius
  */
 export function get_token_radius(token) {
   return token.getFlag(MODULE_ID, "radius");
+}
+
+/**
+ * Gets a token's proximity radius type if it has one, or defaults to RADIUS_TYPE.PIXELS
+ * @param {foundry.documents.TokenDocument} token the token whose proximity radius type will be retrieved
+ * @returns {RADIUS_TYPE} the token's proximity radius type
+ */
+export function get_token_radius_type(token) {
+  return token.getFlag(MODULE_ID, "radius_type") ?? RADIUS_TYPE.PIXELS;
 }
 
 /**
@@ -95,12 +124,31 @@ export function set_token_radius(token, radius) {
 }
 
 /**
+ * Sets a token's proximity radius type
+ * @param {foundry.documents.TokenDocument} token the token whose proximity radius will be overwritten
+ * @param {RADIUS_TYPE} radius_type the new proximity radius type, a value of RADIUS_TYPE
+ * @returns {Promise} the result of foundry.documents.TokenDocument#setFlag
+ */
+export function set_token_radius_type(token, radius_type) {
+  return token.setFlag(MODULE_ID, "radius_type", radius_type);
+}
+
+/**
  * Gets a scene's default proximity radius if it has one
  * @param {foundry.documents.Scene} scene the scene whose proximity radius will be retrieved
- * @returns {number | undefined} the scene's proximity radius in pixels, or undefined if the scene doesn't have a specified proximity radius
+ * @returns {number | undefined} the scene's proximity radius in the scene's radius type, or undefined if the scene doesn't have a specified proximity radius
  */
 export function get_scene_radius(scene) {
   return scene.getFlag(MODULE_ID, "radius");
+}
+
+/**
+ * Gets a scene's proximity radius type if it has one, or defaults to RADIUS_TYPE.PIXELS
+ * @param {foundry.documents.Scene} scene the scene whose proximity radius type will be retrieved
+ * @returns {RADIUS_TYPE} the scene's proximity radius type
+ */
+export function get_scene_radius_type(scene) {
+  return scene.getFlag(MODULE_ID, "radius_type") ?? RADIUS_TYPE.PIXELS;
 }
 
 /**
@@ -111,6 +159,16 @@ export function get_scene_radius(scene) {
  */
 export function set_scene_radius(scene, radius) {
   return scene.setFlag(MODULE_ID, "radius", radius);
+}
+
+/**
+ * Sets a scene's default proximity radius type
+ * @param {foundry.documents.Scene} scene the scene whose proximity radius type will be overwritten
+ * @param {RADIUS_TYPE} radius_type the new proximity radius type, a value of RADIUS_TYPE
+ * @returns {Promise} the result of foundry.documents.Scene#setFlag
+ */
+export function set_scene_radius_type(scene, radius_type) {
+  return scene.setFlag(MODULE_ID, "radius_type", radius_type);
 }
 
 /**
@@ -132,9 +190,24 @@ export function set_scene_disabled(scene, disabled) {
   return scene.setFlag(MODULE_ID, "disabled", disabled);
 }
 
-function _setup_sheet_tab(sheet_config, template_name) {
+/**
+ * Gets a specific token's radius to pixel multiplier for a given radius type
+ * @param {foundry.documents.TokenDocument} token the token for who the multiplier will be calculated based on the radius type
+ * @param {RADIUS_TYPE} radius_type the radius type that defines what the multiplier is
+ * @returns {number} the resulting multiplier
+ */
+export function token_radius_type_pixel_multiplier(token, radius_type) {
+  let multiplier = 1;
+  if (radius_type === RADIUS_TYPE.TILES) multiplier = token.parent.grid.size;
+  return multiplier;
+}
+
+function _setup_sheet_tab(sheet_config, template_name, template_partials) {
   sheet_config.TABS.sheet.tabs.push({ id: "proximity", icon: "fa-solid fa-podcast" });
   sheet_config.PARTS.proximity = { scrollable: [''], template: "modules/" + MODULE_ID + "/templates/" + template_name };
+  if (template_partials && Array.isArray(template_partials)) {
+    sheet_config.PARTS.proximity.templates = template_partials.map((v) => "modules/" + MODULE_ID + "/templates/partials/" + v);
+  }
 
   /* changes order of the proximity tab to be before the footer in the DOM
     since object order is guaranteed as of es6 and works on insertion order
@@ -151,9 +224,9 @@ function _setup_sheet_tab(sheet_config, template_name) {
 }
 
 Hooks.on("init", async () => {
-  _setup_sheet_tab(foundry.applications.sheets.TokenConfig, "token-proximity-tab.hbs");
-  _setup_sheet_tab(foundry.applications.sheets.PrototypeTokenConfig, "token-proximity-tab.hbs");
-  _setup_sheet_tab(foundry.applications.sheets.SceneConfig, "scene-proximity-tab.hbs");
+  _setup_sheet_tab(foundry.applications.sheets.TokenConfig, "token-proximity-tab.hbs", ["radius-type-input.hbs"]);
+  _setup_sheet_tab(foundry.applications.sheets.PrototypeTokenConfig, "token-proximity-tab.hbs", ["radius-type-input.hbs"]);
+  _setup_sheet_tab(foundry.applications.sheets.SceneConfig, "scene-proximity-tab.hbs", ["radius-type-input.hbs"]);
   await game.settings.register(MODULE_ID, "defaultProximityRadius", {
     name: "proximity-voice-chat.Settings.DefaultProximityRadius.Label",
     hint: "proximity-voice-chat.Settings.DefaultProximityRadius.Hint",
@@ -166,6 +239,22 @@ Hooks.on("init", async () => {
       _update_volumes();
     }
   });
+  await game.settings.register(MODULE_ID, "defaultProximityRadiusType", {
+    name: "proximity-voice-chat.Settings.DefaultProximityRadiusType.Label",
+    hint: "proximity-voice-chat.Settings.DefaultProximityRadiusType.Hint",
+    scope: "world",
+    config: true,
+    type: Number,
+    default: RADIUS_TYPE.PIXELS,
+    onChange: () => {
+      _refresh_all_tokens();
+      _update_volumes();
+    },
+    choices: {
+      [RADIUS_TYPE.PIXELS]: "proximity-voice-chat.RadiusType.Pixels",
+      [RADIUS_TYPE.TILES]: "proximity-voice-chat.RadiusType.Tiles"
+    }
+  })
   await game.settings.register(MODULE_ID, "globalListen", {
     name: "proximity-voice-chat.Settings.globalListen.Label",
     hint: "proximity-voice-chat.Settings.globalListen.Hint",
@@ -179,16 +268,22 @@ Hooks.on("init", async () => {
   });
   // exposed api for macros
   game.modules.get(MODULE_ID).api = {
+    RADIUS_TYPE,
     get_userlist,
     set_userlist,
     is_user_in_userlist,
     add_user_to_userlist,
     remove_user_from_userlist,
     get_calculated_token_radius,
+    get_calculated_token_radius_type,
     get_token_radius,
+    get_token_radius_type,
     set_token_radius,
+    set_token_radius_type,
     get_scene_radius,
+    get_scene_radius_type,
     set_scene_radius,
+    set_scene_radius_type,
     is_scene_disabled,
     set_scene_disabled
   }
@@ -207,7 +302,7 @@ let _token_proximity_data = new Map();
  * @param {Partial<BaseEffectSourceData>} data data passed to PointSoundSource.initialize to recalculate the soundsource
  */
 function _update_proximity_data(token, userlist = "", data = {}) {
-  const default_radius = token.getFlag(MODULE_ID, "radius") ?? canvas.scene.getFlag(MODULE_ID, "radius") ?? game.settings.get(MODULE_ID, "defaultProximityRadius");
+  const default_radius = get_calculated_token_radius(token);
   if (data.radius === null) data.radius = default_radius;
   const comma_splitter = /\s*,\s*/;// splits on commas with any amount of whitespace on both sides
   let proximity_data = _token_proximity_data.get(token.uuid);
@@ -234,7 +329,8 @@ function _update_proximity_data(token, userlist = "", data = {}) {
     // proximity data exists but userlist has to be updated
     proximity_data.userlist = userlist.split(comma_splitter);
   }
-
+  const default_radius_type = get_calculated_token_radius_type(token);
+  if (data.radius != null) data.radius *= token_radius_type_pixel_multiplier(token, default_radius_type);
   proximity_data.soundsource.initialize(data);
 }
 
@@ -325,12 +421,13 @@ function _refresh_all_tokens() {
 Hooks.on("updateToken", (document, changed, _options, _userId) => {
   const userlist = changed.flags?.[MODULE_ID]?.userlist;
   const radius = changed.flags?.[MODULE_ID]?.radius;
-  if (userlist !== undefined || radius !== undefined) {
+  const radius_type = changed.flags?.[MODULE_ID]?.radius_type;
+  if (userlist !== undefined || radius !== undefined || radius_type !== undefined) {
     Hooks.callAll("updateTokenProximitySettings", document, userlist, radius);
   }
 });
 
-// don't remember why I made this its own hook
+// don't fully remember why I made this its own hook, something to do with leaving the possibility for a macro or another module to listen for the setting change
 Hooks.on("updateTokenProximitySettings", async (token, userlist, radius) => {
   let data = {};
   if (radius !== undefined) data.radius = radius;
@@ -491,7 +588,7 @@ Hooks.on("renderCameraViews", (_application, _element, _context, _options) => {
   // re-rendering the cameraviews sidebar resets video.volume so it has to be updated again
   _update_volumes();
 
-  // additional update but with a delay due to when someone first joins the voice chat the video element('s volume) gets update slightly after
+  // additional update but with a delay due to when someone first joins the voice chat the video element('s volume) gets updated slightly after
   // this event resolves, not guaranteed to work due to differences in delay but unfortunately there's no proper hook for "player has joined VC"
   setTimeout(() => {
     _update_volumes();

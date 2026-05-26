@@ -1,8 +1,5 @@
 <div class="tab scrollable{{#if tab.active}} active{{/if}}" data-group="{{tab.group}}" data-tab="{{tab.id}}">
-  <label for="{{rootId}}-proximity-radius">{{localize 'proximity-voice-chat.Scene.ProximityRadius.Label'}}</label>
-  <input id="{{rootId}}-proximity-radius" type="number" value="{{source.flags.proximity-voice-chat.radius}}"
-    placeholder="{{localize 'proximity-voice-chat.Scene.ProximityRadius.Hint'}}"
-    name="flags.proximity-voice-chat.radius" />
+  {{> modules/proximity-voice-chat/templates/partials/radius-type-input.hbs tab-type="Scene" isGM=1}}
   <label for="{{rootId}}-disable-proximity-chat">{{localize
     'proximity-voice-chat.Scene.DisableProximityChat.Label'}}</label>
   <input id="{{rootId}}-disable-proximity-chat" type="checkbox" name="flags.proximity-voice-chat.disabled" {{#if

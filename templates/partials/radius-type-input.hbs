@@ -1,0 +1,15 @@
+<div class="form-fields">
+  <label for="{{rootId}}-proximity-radius">{{localize
+    (concat 'proximity-voice-chat.' tab-type '.ProximityRadius.Label')}}</label>
+  <input id="{{rootId}}-proximity-radius" type="number" value="{{source.flags.proximity-voice-chat.radius}}"
+    placeholder="{{localize (concat 'proximity-voice-chat.' tab-type '.ProximityRadius.Hint')}}"
+    name="flags.proximity-voice-chat.radius" {{#unless isGM}}disabled{{/unless}} />
+  <select name="flags.proximity-voice-chat.radius_type" data-dtype="Number" id="{{rootId}}-proximity-radius-type"
+    title="{{localize (concat 'proximity-voice-chat.' tab-type '.ProximityRadiusType.Hover')}}" {{#unless
+    isGM}}disabled{{/unless}} style="flex: 0 1 content;">
+    <option value="0" {{#if (eq source.flags.proximity-voice-chat.radius_type 0)}}selected{{/if}}>{{localize
+      'proximity-voice-chat.RadiusType.Pixels'}}</option>
+    <option value="1" {{#if (eq source.flags.proximity-voice-chat.radius_type 1)}}selected{{/if}}>{{localize
+      'proximity-voice-chat.RadiusType.Tiles'}}</option>
+  </select>
+</div>
